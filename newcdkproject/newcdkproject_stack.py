@@ -47,12 +47,63 @@ class NewcdkprojectStack(Stack):
         # ------------------------------------------------------------------
         # 3. OpenSearch Serverless collection for RAG embeddings
         # ------------------------------------------------------------------
+        collection_name = "certification-rag-collection"
+
+        # Encryption policy required for the collection
+        encryption_policy = oss.CfnSecurityPolicy(
+            self,
+            "RagEncryptionPolicy",
+            name="rag-encryption-policy",
+            type="encryption",
+            policy=json.dumps(
+                {
+                    "Rules": [
+                        {
+                            "ResourceType": "collection",
+                            "Resource": [f"collection/{collection_name}"],
+                        }
+                    ],
+                    "AWSOwnedKey": True,
+                }
+            ),
+        )
+
+        # Network policy allowing public access to the collection
+        network_policy = oss.CfnSecurityPolicy(
+            self,
+            "RagNetworkPolicy",
+            name="rag-network-policy",
+            type="network",
+            policy=json.dumps(
+                [
+                    {
+                        "Description": "Public access",
+                        "Rules": [
+                            {
+                                "ResourceType": "collection",
+                                "Resource": [f"collection/{collection_name}"],
+                            },
+                            {
+                                "ResourceType": "dashboard",
+                                "Resource": [f"collection/{collection_name}"],
+                            },
+                        ],
+                        "AllowFromPublic": True,
+                    }
+                ]
+            ),
+        )
+
         collection = oss.CfnCollection(
             self,
             "RagCollection",
-            name="certification-rag-collection",
+            name=collection_name,
             type="VECTORSEARCH",
         )
+
+        # Ensure policies are created before the collection
+        collection.add_dependency(encryption_policy)
+        collection.add_dependency(network_policy)
 
         # OpenSearch index for embeddings
         index = oss.CfnIndex(
@@ -73,8 +124,8 @@ class NewcdkprojectStack(Stack):
                     "Rules": [
                         {
                             "Resource": [
-                                f"collection/{collection.name}",
-                                f"index/{collection.name}/cert-embeddings",
+                                f"collection/{collection_name}",
+                                f"index/{collection_name}/cert-embeddings",
                             ],
                             "Permission": [
                                 "aoss:DescribeCollection",
