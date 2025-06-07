@@ -8,9 +8,12 @@ future Lambda functions that will interact with these services.
 
 from aws_cdk import (
     Stack,
+    RemovalPolicy,
     aws_s3 as s3,
     aws_opensearchserverless as oss,
     aws_iam as iam,
+    aws_lambda as _lambda,
+    aws_s3_notifications as s3n,
 )
 import json
 from constructs import Construct
@@ -30,6 +33,8 @@ class NewcdkprojectStack(Stack):
             bucket_name="certification-study-materials-will-dev",
             versioned=True,  # retain previous versions of objects
             block_public_access=s3.BlockPublicAccess.BLOCK_ALL,
+            removal_policy=RemovalPolicy.DESTROY,
+            auto_delete_objects=True,
         )
 
         # ------------------------------------------------------------------
@@ -41,9 +46,28 @@ class NewcdkprojectStack(Stack):
             assumed_by=iam.ServicePrincipal("lambda.amazonaws.com"),
         )
 
+        lambda_role.add_to_policy(
+            iam.PolicyStatement(
+                actions=[
+                    "logs:CreateLogGroup",
+                    "logs:CreateLogStream",
+                    "logs:PutLogEvents",
+                ],
+                resources=["arn:aws:logs:*:*:*"],
+            )
+        )
+
+        lambda_role.add_to_policy(
+            iam.PolicyStatement(
+                actions=["bedrock:InvokeModel"],
+                resources=["*"]
+            )
+        )
+
         # Allow read-only access to the S3 bucket
         bucket.grant_read(lambda_role)
 
+        # ------------------------------------------------------------------
         # ------------------------------------------------------------------
         # 3. OpenSearch Serverless collection for RAG embeddings
         # ------------------------------------------------------------------
@@ -137,6 +161,26 @@ class NewcdkprojectStack(Stack):
             ),
         )
         access_policy.add_dependency(collection)
+
+        # ------------------------------------------------------------------
+        # Lambda function triggered on object uploads
+        # ------------------------------------------------------------------
+        ingest_lambda = _lambda.Function(
+            self,
+            "IngestStudyMaterialFunction",
+            runtime=_lambda.Runtime.PYTHON_3_11,
+            handler="ingest_study_material.handler",
+            code=_lambda.Code.from_asset("lambda_functions"),
+            role=lambda_role,
+            environment={
+                "OPENSEARCH_ENDPOINT": collection.attr_collection_endpoint,
+            },
+        )
+
+        bucket.add_event_notification(
+            s3.EventType.OBJECT_CREATED,
+            s3n.LambdaDestination(ingest_lambda),
+        )
 
         # ------------------------------------------------------------------
         # Outputs for easy reference
