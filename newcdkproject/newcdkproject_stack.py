@@ -105,40 +105,42 @@ class NewcdkprojectStack(Stack):
         collection.add_dependency(encryption_policy)
         collection.add_dependency(network_policy)
 
-        # OpenSearch index for embeddings
-        index = oss.CfnIndex(
-            self,
-            "CertEmbeddingsIndex",
-            collection_endpoint=collection.attr_collection_endpoint,
-            index_name="cert-embeddings",
-        )
-
-        # Access policy so the Lambda role can write to the index
+        # Access policy so the Lambda role can write to the embeddings index
+        # The index itself will be created on demand when data is written.
         access_policy = oss.CfnAccessPolicy(
             self,
             "LambdaAccessPolicy",
             name="lambda-access-policy",
             type="data",
             policy=json.dumps(
-                {
-                    "Rules": [
-                        {
-                            "Resource": [
-                                f"collection/{collection_name}",
-                                f"index/{collection_name}/cert-embeddings",
-                            ],
-                            "Permission": [
-                                "aoss:DescribeCollection",
-                                "aoss:WriteDocument",
-                                "aoss:ReadDocument",
-                                "aoss:CreateIndex",
-                            ],
-                        }
-                    ],
-                    "Principal": [lambda_role.role_arn],
-                }
+                [
+                    {
+                        "Description": "Lambda access to embeddings index",
+                        "Rules": [
+                            {
+                                "ResourceType": "index",
+                                "Resource": [
+                                    f"index/{collection_name}/cert-embeddings",
+                                ],
+                                "Permission": [
+                                    "aoss:CreateIndex",
+                                    "aoss:WriteDocument",
+                                    "aoss:ReadDocument",
+                                ],
+                            },
+                            {
+                                "ResourceType": "collection",
+                                "Resource": [f"collection/{collection_name}"],
+                                "Permission": ["aoss:DescribeCollection"],
+                            },
+                        ],
+                        "Principal": [lambda_role.role_arn],
+                    }
+                ],
+                separators=(",", ":"),
             ),
         )
+        access_policy.add_dependency(collection)
 
         # ------------------------------------------------------------------
         # Outputs for easy reference
