@@ -8,6 +8,7 @@ future Lambda functions that will interact with these services.
 
 from aws_cdk import (
     Stack,
+    RemovalPolicy,
     aws_s3 as s3,
     aws_opensearchserverless as oss,
     aws_iam as iam,
@@ -32,6 +33,8 @@ class NewcdkprojectStack(Stack):
             bucket_name="certification-study-materials-will-dev",
             versioned=True,  # retain previous versions of objects
             block_public_access=s3.BlockPublicAccess.BLOCK_ALL,
+            removal_policy=RemovalPolicy.DESTROY,
+            auto_delete_objects=True,
         )
 
         # ------------------------------------------------------------------
