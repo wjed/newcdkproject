@@ -11,6 +11,8 @@ from aws_cdk import (
     aws_s3 as s3,
     aws_opensearchserverless as oss,
     aws_iam as iam,
+    aws_lambda as _lambda,
+    aws_s3_notifications as s3n,
 )
 import json
 from constructs import Construct
@@ -43,6 +45,24 @@ class NewcdkprojectStack(Stack):
 
         # Allow read-only access to the S3 bucket
         bucket.grant_read(lambda_role)
+
+        # ------------------------------------------------------------------
+        # Lambda function triggered on object uploads
+        # ------------------------------------------------------------------
+        ingest_lambda = _lambda.Function(
+            self,
+            "IngestLambda",
+            runtime=_lambda.Runtime.PYTHON_3_11,
+            handler="ingest_lambda.handler",
+            code=_lambda.Code.from_asset("lambdas"),
+            role=lambda_role,
+        )
+
+        # Notify the Lambda when new objects are created in the bucket
+        bucket.add_event_notification(
+            s3.EventType.OBJECT_CREATED,
+            s3n.LambdaDestination(ingest_lambda),
+        )
 
         # ------------------------------------------------------------------
         # 3. OpenSearch Serverless collection for RAG embeddings
