@@ -126,13 +126,9 @@ class NewcdkprojectStack(Stack):
                                     "aoss:CreateIndex",
                                     "aoss:WriteDocument",
                                     "aoss:ReadDocument",
+                                    "aoss:DescribeIndex",
                                 ],
-                            },
-                            {
-                                "ResourceType": "collection",
-                                "Resource": [f"collection/{collection_name}"],
-                                "Permission": ["aoss:DescribeCollection"],
-                            },
+                            }
                         ],
                         "Principal": [lambda_role.role_arn],
                     }
