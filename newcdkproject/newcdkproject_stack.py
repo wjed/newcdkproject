@@ -9,10 +9,12 @@ future Lambda functions that will interact with these services.
 from aws_cdk import (
     Stack,
     RemovalPolicy,
+    Duration,
     aws_s3 as s3,
     aws_opensearchserverless as oss,
     aws_iam as iam,
     aws_lambda as _lambda,
+    aws_apigateway as apigw,
     aws_s3_notifications as s3n,
 )
 import json
@@ -183,15 +185,47 @@ class NewcdkprojectStack(Stack):
         )
 
         # ------------------------------------------------------------------
+        # Lambda function powering the chatbot API
+        # ------------------------------------------------------------------
+        chatbot_lambda = _lambda.Function(
+            self,
+            "ChatbotQueryFunction",
+            runtime=_lambda.Runtime.PYTHON_3_12,
+            handler="chatbot_query.handler",
+            code=_lambda.Code.from_asset("lambda_functions"),
+            role=lambda_role,
+            timeout=Duration.seconds(30),
+            memory_size=512,
+            environment={
+                "OPENSEARCH_ENDPOINT": collection.attr_collection_endpoint,
+            },
+        )
+
+        api = apigw.RestApi(
+            self,
+            "ChatbotApi",
+            default_cors_preflight_options=apigw.CorsOptions(
+                allow_origins=apigw.Cors.ALL_ORIGINS,
+                allow_methods=["POST", "OPTIONS"],
+            ),
+        )
+        ask = api.root.add_resource("ask")
+        ask.add_method("POST", apigw.LambdaIntegration(chatbot_lambda))
+
+        # ------------------------------------------------------------------
         # Outputs for easy reference
         # ------------------------------------------------------------------
         self.bucket_name = bucket.bucket_name
         self.collection_name = collection.name
         self.lambda_role_arn = lambda_role.role_arn
+        self.chatbot_api_url = api.url
+        self.chatbot_lambda_name = chatbot_lambda.function_name
 
         self.add_output("BucketName", self.bucket_name)
         self.add_output("CollectionName", self.collection_name)
         self.add_output("LambdaRoleArn", self.lambda_role_arn)
+        self.add_output("ChatbotApiUrl", self.chatbot_api_url)
+        self.add_output("ChatbotLambdaName", self.chatbot_lambda_name)
 
     # Helper to add outputs with consistent naming
     def add_output(self, id_: str, value: str) -> None:

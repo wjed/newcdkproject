@@ -40,10 +40,11 @@ def embed_text(text: str) -> list:
     return payload.get("embedding")
 
 
-def index_embedding(id_: str, embedding: list):
+def index_embedding(id_: str, embedding: list, text: str) -> None:
+    """Store the extracted text and its embedding in OpenSearch."""
     url = f"https://{OPENSEARCH_ENDPOINT}/{INDEX_NAME}/_doc/{id_}"
     headers = {"Content-Type": "application/json"}
-    data = json.dumps({"vector": embedding})
+    data = json.dumps({"vector": embedding, "text": text})
     requests.put(url, auth=auth, headers=headers, data=data)
 
 
@@ -56,5 +57,5 @@ def handler(event, context):
             s3_client.download_file(bucket, key, tmp_path)
             text = extract_text(tmp_path)
             embedding = embed_text(text)
-            index_embedding(key, embedding)
+            index_embedding(key, embedding, text)
     return {"status": "processed", "records": len(event.get("Records", []))}
