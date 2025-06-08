@@ -14,6 +14,7 @@ from aws_cdk import (
     aws_opensearchserverless as oss,
     aws_iam as iam,
     aws_lambda as _lambda,
+    aws_lambda_python_alpha as lambda_python,
     aws_apigateway as apigw,
     aws_s3_notifications as s3n,
 )
@@ -187,12 +188,13 @@ class NewcdkprojectStack(Stack):
         # ------------------------------------------------------------------
         # Lambda function powering the chatbot API
         # ------------------------------------------------------------------
-        chatbot_lambda = _lambda.Function(
+        chatbot_lambda = lambda_python.PythonFunction(
             self,
             "ChatbotQueryFunction",
+            entry="lambda_functions",
             runtime=_lambda.Runtime.PYTHON_3_12,
-            handler="chatbot_query.handler",
-            code=_lambda.Code.from_asset("lambda_functions"),
+            index="chatbot_query.py",
+            handler="handler",
             role=lambda_role,
             timeout=Duration.seconds(30),
             memory_size=512,
