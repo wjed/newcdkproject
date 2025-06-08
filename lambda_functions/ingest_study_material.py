@@ -40,9 +40,15 @@ def embed_text(text: str) -> list:
     return payload.get("embedding")
 
 
+def sanitize_id(id_: str) -> str:
+    """Make an S3 object key safe for use as a document ID."""
+    return id_.replace("/", "_")
+
+
 def index_embedding(id_: str, embedding: list, text: str) -> None:
     """Store the extracted text and its embedding in OpenSearch."""
-    url = f"https://{OPENSEARCH_ENDPOINT}/{INDEX_NAME}/_doc/{id_}"
+    safe_id = sanitize_id(id_)
+    url = f"https://{OPENSEARCH_ENDPOINT}/{INDEX_NAME}/_doc/{safe_id}"
     headers = {"Content-Type": "application/json"}
     data = json.dumps({"vector": embedding, "text": text})
     requests.put(url, auth=auth, headers=headers, data=data)

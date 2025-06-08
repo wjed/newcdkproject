@@ -1,58 +1,32 @@
+# AI Certification Study Assistant
 
-# Welcome to your CDK Python project!
+This project deploys AWS resources for a chatbot that indexes study material from an S3 bucket and serves answers through an API Gateway endpoint. Embeddings are generated using Amazon Bedrock and stored in an OpenSearch Serverless collection.
 
-This is a blank project for CDK development with Python.
+## Setup
 
-The `cdk.json` file tells the CDK Toolkit how to execute your app.
+1. Create and activate a Python virtual environment.
+   ```bash
+   python -m venv .venv
+   source .venv/bin/activate
+   ```
+2. Install the dependencies for the CDK app and tests.
+   ```bash
+   pip install -r requirements.txt -r requirements-dev.txt
+   ```
+3. Build the Lambda layer containing third‑party packages. Dependencies are listed in `lambda_functions/requirements.txt`.
+   ```bash
+   pip install -r lambda_functions/requirements.txt -t lambda_layer/python
+   ```
+4. Synthesize the CloudFormation template and deploy.
+   ```bash
+   cdk synth
+   cdk deploy
+   ```
 
-This project is set up like a standard Python project.  The initialization
-process also creates a virtualenv within this project, stored under the `.venv`
-directory.  To create the virtualenv it assumes that there is a `python3`
-(or `python` for Windows) executable in your path with access to the `venv`
-package. If for any reason the automatic creation of the virtualenv fails,
-you can create the virtualenv manually.
+After deployment, note the `ChatbotApiUrl` output. You can test the chatbot with:
 
-To manually create a virtualenv on MacOS and Linux:
-
+```bash
+curl -X POST <ChatbotApiUrl>ask \
+  -H "Content-Type: application/json" \
+  -d '{"query": "What is IAM?"}'
 ```
-$ python -m venv .venv
-```
-
-After the init process completes and the virtualenv is created, you can use the following
-step to activate your virtualenv.
-
-```
-$ source .venv/bin/activate
-```
-
-If you are a Windows platform, you would activate the virtualenv like this:
-
-```
-% .venv\Scripts\activate.bat
-```
-
-Once the virtualenv is activated, you can install the required dependencies.
-
-```
-$ pip install -r requirements.txt
-```
-
-At this point you can now synthesize the CloudFormation template for this code.
-
-```
-$ cdk synth
-```
-
-To add additional dependencies, for example other CDK libraries, just add
-them to your `setup.py` file and rerun the `pip install -r requirements.txt`
-command.
-
-## Useful commands
-
- * `cdk ls`          list all stacks in the app
- * `cdk synth`       emits the synthesized CloudFormation template
- * `cdk deploy`      deploy this stack to your default AWS account/region
- * `cdk diff`        compare deployed stack with current state
- * `cdk docs`        open CDK documentation
-
-Enjoy!

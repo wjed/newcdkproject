@@ -70,6 +70,17 @@ class NewcdkprojectStack(Stack):
         bucket.grant_read(lambda_role)
 
         # ------------------------------------------------------------------
+        # Lambda layer with third-party dependencies
+        # ------------------------------------------------------------------
+        dependencies_layer = _lambda.LayerVersion(
+            self,
+            "DependenciesLayer",
+            code=_lambda.Code.from_asset("lambda_layer"),
+            compatible_runtimes=[_lambda.Runtime.PYTHON_3_11, _lambda.Runtime.PYTHON_3_12],
+            description="Third-party libraries for study assistant",
+        )
+
+        # ------------------------------------------------------------------
         # ------------------------------------------------------------------
         # 3. OpenSearch Serverless collection for RAG embeddings
         # ------------------------------------------------------------------
@@ -174,6 +185,7 @@ class NewcdkprojectStack(Stack):
             handler="ingest_study_material.handler",
             code=_lambda.Code.from_asset("lambda_functions"),
             role=lambda_role,
+            layers=[dependencies_layer],
             environment={
                 "OPENSEARCH_ENDPOINT": collection.attr_collection_endpoint,
             },
@@ -194,6 +206,7 @@ class NewcdkprojectStack(Stack):
             handler="chatbot_query.handler",
             code=_lambda.Code.from_asset("lambda_functions"),
             role=lambda_role,
+            layers=[dependencies_layer],
             timeout=Duration.seconds(30),
             memory_size=512,
             environment={
