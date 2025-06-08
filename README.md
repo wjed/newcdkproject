@@ -13,9 +13,10 @@ This project deploys AWS resources for a chatbot that indexes study material fro
    ```bash
    pip install -r requirements.txt -r requirements-dev.txt
    ```
-3. Build the Lambda layer containing third‑party packages. Dependencies are listed in `lambda_functions/requirements.txt`.
+3. Build the Lambda layer containing third‑party packages. Dependencies are
+   listed in `lambda_functions/requirements.txt`.
    ```bash
-   pip install -r lambda_functions/requirements.txt -t lambda_layer/python
+   ./build_layer.sh
    ```
 4. Synthesize the CloudFormation template and deploy.
    ```bash
