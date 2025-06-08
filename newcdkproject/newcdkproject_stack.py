@@ -14,10 +14,10 @@ from aws_cdk import (
     aws_opensearchserverless as oss,
     aws_iam as iam,
     aws_lambda as _lambda,
-    aws_lambda_python_alpha as lambda_python,
     aws_apigateway as apigw,
     aws_s3_notifications as s3n,
 )
+from aws_cdk.aws_lambda_python_alpha import PythonFunction
 import json
 from constructs import Construct
 
@@ -188,7 +188,7 @@ class NewcdkprojectStack(Stack):
         # ------------------------------------------------------------------
         # Lambda function powering the chatbot API
         # ------------------------------------------------------------------
-        chatbot_lambda = lambda_python.PythonFunction(
+        chatbot_lambda = PythonFunction(
             self,
             "ChatbotQueryFunction",
             entry="lambda_functions",
