@@ -17,7 +17,6 @@ from aws_cdk import (
     aws_apigateway as apigw,
     aws_s3_notifications as s3n,
 )
-from aws_cdk.aws_lambda_python_alpha import PythonFunction
 import json
 from constructs import Construct
 
@@ -188,13 +187,12 @@ class NewcdkprojectStack(Stack):
         # ------------------------------------------------------------------
         # Lambda function powering the chatbot API
         # ------------------------------------------------------------------
-        chatbot_lambda = PythonFunction(
+        chatbot_lambda = _lambda.Function(
             self,
             "ChatbotQueryFunction",
-            entry="lambda_functions",
             runtime=_lambda.Runtime.PYTHON_3_12,
-            index="chatbot_query.py",
-            handler="handler",
+            handler="chatbot_query.handler",
+            code=_lambda.Code.from_asset("lambda_functions"),
             role=lambda_role,
             timeout=Duration.seconds(30),
             memory_size=512,
